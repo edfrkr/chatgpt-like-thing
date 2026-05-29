@@ -55,6 +55,7 @@ print("batch yb.shape:", yb.shape)
 class BigramLanguageModel(nn.Module):
     def __init__(self, vocab_size):
         super().__init__()
+        self.vocab_size = vocab_size
         self.W = nn.Parameter(torch.randn(vocab_size, vocab_size))
 
     def forward(self, x):
