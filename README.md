@@ -209,4 +209,70 @@ ___
 
 4. notebook4
 
+*attention이란?
 
+<img width="374" height="452" alt="image" src="https://github.com/user-attachments/assets/f02695b8-1a0d-4e9d-b807-2d3f948aa23c" />
+
+   I am a student.라는 문장을 input한다고 생각을 해보겠습니다. 이때의 input 데이터는 ["I", " ", "a", "m", ..., "."] 입니다. input embedding은 앞선 notebook에서 model을 통해 batchsize*blocksize*emb_dim의 행렬 데이터를 만든것 과 같이 "I", " ", "a", ..., "." 각각에 대해 동시 고차원의 행렬데이터를 만들어주는 것입니다.
+
+   notebook3나 notebook4에서는 1번째~10번째글자와 같이 sliding window dataset이었지만, attention 모델에서는 각각의 글자가 개별로 input됩니다. 그러므로, input되는 글자가 문장에서 몇 번째 index에 있었던 글자인지에 대한 정보를 주어야합니다. 이를 수행하는 것이 positional encoding입니다.
+
+   최종값은 input embedding + position encoding 형태이며, 우리 문장의 "I"를 예시로 들자면 "I"의 의미를 나타내는 행렬 + "첫번째 위치"를 나타내는 행렬로 표시가 될 것입니다. 이 값이 multi-head attention을 통해 input된 데이터의 정보를 담은 행렬이 되고, feed forward에서는 이 행렬의 정보를 추론합니다.
+
+   OUTPUT에는 우리가 한글로 된 데이터를 원해서 "나는 학생입니다."라는 글자를 넣어 output embedding + positional embedding 한다고 하면, 이 대 진행하는 masked multi-head attention은 어떠한 크기의 행렬이 될 것입니다. 그 행렬의 첫 번째 행은 첫 번째 글자인 "나"에 대한 정보이므로 그 뒤의 값은 필요가 없습니다.(이전에 어떤 글자가 나왔는지를 보아야 하므로, 이후에 어떤 글자가 있는지는 필요한 정보가 아니기 때문입니다.) 그러므로 두번째 행은 "는"에 대한 정보이고, "나는" 까지의 정보를 가지고 있습니다. 
+
+   똑같이 이 output은 input에서 나온 값과 같이 multi-head attention을 통하여 두 데이터의 정보를 담은 행렬이 되고, 최종적으로 이 행렬을 linear layer를 통과시켜, softmax를 통해 확률을 도출해 낼 수 있습니다. 즉, input의 글자간의 유사성을 담은 행렬과 output의 글자간의 유사성을 담은 행렬 간의 유사성을 수치화하여, linear를 돌렸을 때 가장 loss가 적은 gradient를 만들어내는 '글자의 정보를 담은 행렬의 각 데이터의 확률'을 만들어내는 것입니다.  
+
+<img width="542" height="60" alt="image" src="https://github.com/user-attachments/assets/9190b04a-e1da-4007-97a5-fc8d1d24232d" />
+
+   attention이 무엇인지 'i am a student'를 기준으로 설명하겠습니다. 우선 쿼리는 input으로 생각할 수 있습니다. 즉 [i, , a, m, a, s, t, u, d, e, n, t]와 같은 데이터라고 생각한다면, key는 query주변의 글자에 대한 데이터라고 생각할  수 있습니다. 즉, "a"라는 query에 대해 " ", "m", "s"와 같은 key가 존재할 수 있습니다. 그리고 각각의 글자는 positonal encoding이 된 상태이므로 위치정보를 가진 글자들입니다. 그러므로 a의 앞에 " "이 오는지, a의 뒤에 " "이 오는지에 따라 query * key의 값은 달라질 것입니다.
+
+   그러므로 Query = [i, , a, m, a, s, t, u, d, e, n, t], 와 Key = [i, , a, m, a, s, t, u, d, e, n, t]를 Key를 transpose하여 행렬곱하면 12 * 12 * A 모양의 글자간의 관계정보가 담긴 행렬이 만들어 질 것입니다. 이를 dimension을 square root한 값으로 나눠주면, 데이터 크기를 기준으로 자료가 표준화되며, 이를 softmax를 통해 각각의 글자에 대한 확률값으로 바꿀 수 있습니다. 이 값(위에서는 편의상 알파벳으로 썻지만, 글자의 의미와 위치값을 가진 숫자로 이루어진 행렬로부터 나온 숫자값)에 진짜 문장인 'i am a student'의 각 글자가 가지고 있는 의미 및 위치정보를 곱하면, 확률적으로 가장 나올법한 알파벳과 그 위치값이 출력됩니다. 
+
+<img width="488" height="274" alt="image" src="https://github.com/user-attachments/assets/49d99c87-d1fc-47b3-833e-d3eef0bb1abf" />
+
+   이 Q@K_transposed 계산을 한 번 하는 것이 single head attention, 이 계산을 고차원으로 진행하는 것이 multi-head attention이라고 이해할 수 있습니다. 
+
+4.1. dataset
+
+<img width="481" height="231" alt="image" src="https://github.com/user-attachments/assets/9b0218f5-432b-42a1-bd36-657abb5afe8c" />
+
+   아까와는 dataset을 정하는 방법이 달라졌습니다. 아까는 x를 1번째부터 10번째까지, y를 11번째 글자로 지정했던 것과는 달리, y는 idx+1 부터 idx+block_size+1로 정의함으로써 2번째부터 11번째 글짜까지로 지정하는 방식이 되었습니다.
+
+4.2. model
+
+<img width="548" height="318" alt="image" src="https://github.com/user-attachments/assets/afe6b80b-76e8-4be1-bf90-54fb43ee4cef" />
+
+   이 클래스에서 attention 모델의 느낌을 볼 수 있습니다. def__init__에서 self.token_embedding과 self.position_embedding을 통해 input embedding과 position embedding을 하고 있음을 알 수 있으며, nn.embedding을 통과한 데이터는 앞선 노트북에서 self.W를 one_hot과 행렬곱한 것과 절차상으로 같은 것입니다. lm_head는 이 과정을 끝낸 후 통과시키는 linear layering임을 볼 수 있습니다.
+
+   또한, def__forward에서 tok+pos를 함으로써 글자의 의미정보와 위치정보를 더하고 있음을 볼 수 있으며, logits에 lm_head로 부터 나온 값을 대입하므로 logits는  linear layering을 거쳐 나온 logits값임을 알 수 있습니다. 
+
+<img width="784" height="271" alt="image" src="https://github.com/user-attachments/assets/316d33e9-e44c-4d72-8023-b2602ff23010" />
+
+   결론적으로, 희곡의 모양새는 하고 있지만 notebook 3보다는 완성도가 낮음을 볼 수 있습니다. 
+___
+
+5. notebook 5
+
+   이제는 masked single-head attention을 진행합니다.
+
+5.1. class SingleHeadASelfAttention
+<img width="675" height="387" alt="image" src="https://github.com/user-attachments/assets/8dbce597-5404-46d7-b75b-2904c9874f5a" />
+
+   self.key, self.query, self.value를 통해 모델에 기입되는 문장정보로부터 key, query, value 데이터를 만들어내고 있습니다. 그리고 def forward를 통해 query @ key_transpose를 계산한 후 softmax를 취하여 확률값인 wei를 계산해내고, 마지막에 wei @ v를 함으로써 가장 확률적으로 나올법한 글자값인 out을 반환해내는 것을 볼 수 있습니다. 
+
+5.2. class TinyattentionLM
+<img width="566" height="399" alt="image" src="https://github.com/user-attachments/assets/8a2aa304-7824-4984-a16b-69a0b8abb808" />
+
+   이 class에서는 def__init__에서 input embedding과 position_embedding을 하고, def forward에서 input embedding과 position embedding 값을 더한 값을 정의하고 있습니다. 또한 def_innit에서 5-1에서 정의한 클래스를 사용하고 있으므로, 위의 클래스는 attention의 구조를 만들고, 밑의 클래스는 attention에 들어갈 데이터를 처리하고 attention을 통과시키는 작업이라고 생각할 수 있습니다. 
+
+<img width="847" height="311" alt="image" src="https://github.com/user-attachments/assets/78e32391-2d6a-4057-b968-561bde93cf97" />
+
+   결론적으로 notebook4보다 개선된 모습을 보여주지만 아직 부족함을 볼 수 있습니다.
+___
+
+6. notebook6
+
+
+
+   
