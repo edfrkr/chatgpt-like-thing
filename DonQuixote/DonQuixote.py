@@ -18,6 +18,8 @@ itos = {i: ch for ch, i in stoi.items()}
 vocab_size = len(chars)
 data = torch.tensor([stoi[ch] for ch in text], dtype=torch.long)
 
+print("vocab size :" + str(vocab_size))
+
 class NextTokenDataset(Dataset):
     def __init__(self, data, block_size):
         self.data = data
@@ -31,7 +33,7 @@ class NextTokenDataset(Dataset):
 
 block_size = 64
 dataset = NextTokenDataset(data, block_size)
-loader = DataLoader(dataset, batch_size=128, shuffle=True)
+loader = DataLoader(dataset, batch_size=64, shuffle=True)
 xb, yb = next(iter(loader))
 
 class Head(nn.Module):
@@ -96,7 +98,7 @@ class Block(nn.Module):
     
 
 class TinyGPT(nn.Module):
-    def __init__(self, vocab_size, block_size, emb_dim=128, num_heads=8, num_layers=8, dropout=0.2):
+    def __init__(self, vocab_size, block_size, emb_dim=128, num_heads=4, num_layers=4, dropout=0.2):
         super().__init__()
         self.token_embedding = nn.Embedding(vocab_size, emb_dim)
         self.position_embedding = nn.Embedding(block_size, emb_dim)
