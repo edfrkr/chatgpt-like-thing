@@ -77,7 +77,8 @@
    xb, yb = next(iter(loader))이므로, iter(loader)를 통해 위에서 만든 loader로부터 하나씩 데이터를 꺼낸 후, next()를 통해 다음차례의 데이터를 또 꺼내는 것입니다. 그러므로 xb = [[0,-,-], [13,13,1], ~~~] (32개), yb = [13,5,1,~~~] (32개)라고 생각할 수 있습니다.
 
 1.3. Bigram modelling  *명시적 one-hot
-<img width="624" height="282" alt="image" src="https://github.com/user-attachments/assets/e7c249a6-4b1e-40be-b07d-f478d6b2fdc4" />
+
+<img width="555" height="293" alt="image" src="https://github.com/user-attachments/assets/74fbed03-a94b-44af-bfab-77e6c05a01a8" />
 
 1.3.1. class BigramLanguageModel(nn.Module)
 
@@ -90,7 +91,7 @@
 
    x=x.view(-1)입니다. x는 dataloader를 거쳐 나온 데이터이므로, 32*1의 모양입니다. -1을 기준으로 view를 한다는 의미이므로, x는 32개의 숫자의 나열이 됩니다.
 
-   F.one_hot(x,num_classes=self.vocab_size).float()에서는 one hot의 개념을 알아야 합니다. 예를 들어 "."은 0번째이고, "e"는 5번째입니다. 그러므로 "."을 행렬로 표시하면 [1,0,0,...]가 됩니다. "e"를 행렬로 표시하면 [0,0,0,0,1,0,0,...]가 됩니다. 그러므로 "."이나 "e"와 같은 데이터 하나가 들어왔을 때, x_onehot은 1*27의 행렬이 되고, self.w는 x_onehot에 곱하는 27*27사이즈의 가중치 행렬이 됩니다.
+   F.one_hot(x,num_classes=self.vocab_size).float()에서는 one hot의 개념을 알아야 합니다. 예를 들어 "."은 0번째이고, "e"는 5번째입니다. 그러므로 "."을 행렬로 표시하면 [1,0,0,...]가 됩니다. "e"를 행렬로 표시하면 [0,0,0,0,1,0,0,...]가 됩니다. 그러므로 "."이나 "e"와 같은 데이터 하나가 들어왔을 때, x_onehot은 1 * 27의 행렬이 되고, self.w는 x_onehot에 곱하는 27 * 27사이즈의 가중치 행렬이 됩니다.
 
    그러므로 두 행렬곱의 결과인 logits는 1*27의 행렬이 됩니다. 즉, x_onehot에 해당하는 글자 중 "e"라는 글자가 [., a, ..., z]의 27개 문자와 가지는 연관성을 표현하는 행렬이 됩니다. 
 
@@ -102,7 +103,7 @@
 
    model = BigramLanguageModel(vocab_size)를 통해 우리가 사용할 모델의 위에서 정의한 logits = x_onehot @ W 자료임을 정의하며, vocab_size가 인수이므로, W는 27*27임을 알 수 있습니다. 
 
-   logits = model(xb)이므로, 위에서 정의한 xb를 모델에 넣어서 나온 값을 logits에 집어넣습니다. xb는 32*1의 모양이므로, xb의 각각의 데이터에 대한 model에서의 결과값이 나올 것입니다. 그러므로 logits는 32*27사이즈의 행렬임을 알 수 있으며, 무작위의 문자 32개에 대해 우리가 가진 vocab의 27개의 문자가 가지는 연관성에 대한 값이 나올 것입니다. 
+   logits = model(xb)이므로, 위에서 정의한 xb를 모델에 넣어서 나온 값을 logits에 집어넣습니다. xb는 32 * 1의 모양이므로, xb의 각각의 데이터에 대한 model에서의 결과값이 나올 것입니다. 그러므로 logits는 32*27사이즈의 행렬임을 알 수 있으며, 무작위의 문자 32개에 대해 우리가 가진 vocab의 27개의 문자가 가지는 연관성에 대한 값이 나올 것입니다. 
 
 <img width="471" height="17" alt="image" src="https://github.com/user-attachments/assets/a6ca1c8d-90f6-4b22-b83c-9ed3b97ce900" />
 <img width="247" height="16" alt="image" src="https://github.com/user-attachments/assets/0f35e4dd-54dd-4af2-b395-f9349274f6eb" />
@@ -145,12 +146,67 @@ ___
 
 2. notebook 2
 
+*dataset까지는 notebook1과 내용이 같으므로 모델부터 설명을 시작합니다.
 
+2.1. MLP model
 
+<img width="647" height="345" alt="image" src="https://github.com/user-attachments/assets/1d81307a-3901-4b07-9d8d-8f2eaf35216e" />
 
+   이번에는 직접 self.W을 만들고 x_onehot과 행렬곱하는 방식이 아니라, nn.sequential 함수를 사용합니다. 
    
-
-
-
-
+   먼저 nn.embedding(vocab_size, emb_dim)은 onehot @ self.W를 그대로 진행하는 것과 같습니다. 곧 embedding을 통과한 데이터는 batch_size * block_size * emb_dim 모양의 행렬이며, 각 행은 각각의 데이터가 vocab_size안의 문자들과 가지는 정보를 의미합니다. emb_dim이 10이라는 이야기는, batch_size(64)*block_size(3) 모양의 행렬의 각각의 데이터(글자들)마다 10차원의 정보를 가진다는 의미입니다. 이 점에서 one_hot은 0과 1의 데이터이지만, nn.embedding은 10차원의 연속적 정보라는 점에서 다릅니다. 
    
+   이후 nn.flatten을 통해 10차원의 데이터를 가지고 있는 하나의 블록을 이어붙여서, 결론적으로 64 * 30 모양의 데이터로 가공합니다. (batch_size를 64로 지정했기 때문입니다.) 
+
+   nn.linear(block_size * emb_dim, hidden_dim)에서 hidden이란, 문자열에 숨겨져 있는 규칙을 찾는 것입니다. 즉, emm이라는 block에 대해 a가 오는 규칙의 가능성, b가 오는 규칙의 가능성 등등이 있으며, hidden_dim = 200이므로, 200개의 규칙(혹은 특징)을 추출하는 것입니다. 이렇게 하여 "30 * 200" 사이즈의 가중치행렬을 만들고, 이를 통해 "64 * 200" 사이즈의 
+
+   nn.tanh()에서는 지금까지의 처리된 데이터 (64 * 200 모양)에 하이퍼볼릭 탄젠트 값을 씌워 곡선형으로 변환합니다. 
+
+   마지막으로 다시 nn.linear(hidden_dim, vocab_size)를 함으로써 hidden_layer 데이터 (64 * 200)에 200 * 27사이즈의 가중치 데이터를 곱해서 64 * 27사이즈의 최종 logits 데이터가 완성됩니다. 
+
+   즉, nn.sequential()에서 하는 작업은 embedding하고 flatten하여 만든 한 단어의 행렬을, 같은 과정을 통해 나온 다른 단어의 행렬과 linear작업을 하여 단어와 단어 사이의 거리(벡터와 벡터 사이의 거리 또는 각도)가 작은 단어들을 찾아내어 확률을 부여하는 작업입니다. 
+   
+*training & optimizing과 sampling은 notebook1과 내용이 같으므로, 바로 결과를 설명합니다.
+
+<img width="748" height="18" alt="image" src="https://github.com/user-attachments/assets/ffec0e01-8f4b-48c9-8c85-8bf8bc671da0" />
+
+notebook1보다는 조금 더 그럴싸한 output이 나왔음을 볼 수 있다. 
+___
+
+notebook3
+
+<img width="780" height="102" alt="image" src="https://github.com/user-attachments/assets/fb540905-0f4d-4e85-aa09-250889225b9b" />
+
+이번에는 names가 아닌 셰익스피어의 로미오와 줄리엣 작품을 데이터로 사용하며, 전반적인 구조는 notebook2와 같으므로, 필요한 부분만 설명하겠습니다.
+
+3.1 sliding window dataset
+
+3.1.1. class CharSequenceNextCharDataset(Dataset):
+<img width="504" height="316" alt="image" src="https://github.com/user-attachments/assets/9e26f86d-3937-4a4b-9ef8-e39551ce5fcf" />
+
+   이 class의 def__init__은 self.dat = data, self.block_size = block_size이므로, 이 클래스를 사용한 dataset의 인수로 넣은 data(text의 모든 글자를 정수화 한 자료)와 block_size(16)을 사용하겠다는 의미입니다. 
+
+   또한 def_len__(self)에서 len(self.data) - self.block_size를 하는 이유는, self.data전체를 x값으로 넣어버리면 남아있는 데이터가 없으므로 정답이 될 문자를 남겨놓을 수 없기 때문입니다.
+
+   def__getitem__에서는 x는 인덱스 위치의 값부터 블록사이즈만큼까지의 데이터를 가지고, y는 인덱스위치에서 블록사이즈 + 1만큼의 위치에 있는 데이터 1개를 의미합니다. 
+
+<img width="602" height="370" alt="image" src="https://github.com/user-attachments/assets/0b5f8020-c6bc-4c9c-9ce3-8e2fa48ecd20" />
+
+   그러므로 xb는 128 * 16, embedding을 통과한 후에는 128 * 16 * 64, fatten을 통과한 후에는 128 * 80, 그다음 linear를 통과하면 128 * 256, tanh를 통과한 후 마지막 linear를 통과하면 128 * 65의 logits가 나올 것입니다. 
+
+*training과 evaluation은 내용이 같으므로 바로 sampling과 결과를 설명합니다.
+
+3.2. sampling 및 결과
+
+<img width="781" height="360" alt="image" src="https://github.com/user-attachments/assets/bd5025c0-0f09-4f24-ad9d-37c2879ea104" />
+
+sampling과정도 notebook2와 크게 다르지는 않습니다. 다만, max_new_tokens의 의미는 start_text로부터 몇 개의 데이터를 추론해낼 것인지에 대한 정보입니다. def에서는 300으로 정의하였으므로 300개의 데이터를 통해 추론해 낼 것이고, print문에서는 400이므로 ROMEO: 뒤에 400개의 데이터를 최종적으로 출력할 것임을 알 수 있습니다. 
+
+<img width="511" height="320" alt="image" src="https://github.com/user-attachments/assets/78cfb113-ae5e-471c-a732-accf74d9ae3e" />
+
+완벽하지는 않지만, 꽤나 영어문장과 같은 모습이 되었음을 볼 수 있습니다. 
+___
+
+4. notebook4
+
+
