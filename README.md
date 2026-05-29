@@ -257,11 +257,13 @@ ___
    이제는 masked single-head attention을 진행합니다.
 
 5.1. class SingleHeadASelfAttention
+
 <img width="675" height="387" alt="image" src="https://github.com/user-attachments/assets/8dbce597-5404-46d7-b75b-2904c9874f5a" />
 
-   self.key, self.query, self.value를 통해 모델에 기입되는 문장정보로부터 key, query, value 데이터를 만들어내고 있습니다. 그리고 def forward를 통해 query @ key_transpose를 계산한 후 softmax를 취하여 확률값인 wei를 계산해내고, 마지막에 wei @ v를 함으로써 가장 확률적으로 나올법한 글자값인 out을 반환해내는 것을 볼 수 있습니다. 
+   self.key, self.query, self.value를 통해 모델에 기입되는 문장정보로부터 key, query, value 데이터를 만들어내고 있습니다. self.register_buffer는 하삼각행렬, 즉 미래의 글자 정보는 지운 데이터로 만드는 과정입니다. 그리고 def forward를 통해 query @ key_transpose를 계산한 후 softmax를 취하여 확률값인 wei를 계산해내고, 마지막에 wei @ v를 함으로써 가장 확률적으로 나올법한 글자값인 out을 반환해내는 것을 볼 수 있습니다. 
 
 5.2. class TinyattentionLM
+
 <img width="566" height="399" alt="image" src="https://github.com/user-attachments/assets/8a2aa304-7824-4984-a16b-69a0b8abb808" />
 
    이 class에서는 def__init__에서 input embedding과 position_embedding을 하고, def forward에서 input embedding과 position embedding 값을 더한 값을 정의하고 있습니다. 또한 def_innit에서 5-1에서 정의한 클래스를 사용하고 있으므로, 위의 클래스는 attention의 구조를 만들고, 밑의 클래스는 attention에 들어갈 데이터를 처리하고 attention을 통과시키는 작업이라고 생각할 수 있습니다. 
@@ -273,6 +275,51 @@ ___
 
 6. notebook6
 
+6.1. multi-head attention
 
+6.1.1. class Head
 
-   
+<img width="736" height="393" alt="image" src="https://github.com/user-attachments/assets/692565a4-3c48-40a9-a74c-6fec007cbcd9" />
+
+notebook 5와 비교했을 때 self.dropoput = nn.Dropout(dropout)이 새롭게 추가된 것을 볼 수 있습니다. dropout의 역할은 말그대로, 데이터 배치를 가지고 연산하는 과정에서 연산 통로를 무작위로 지워버리는 역할입니다. 이 과정에서, 컴퓨터가 빈 칸을 추론하는 과정을 거치게 되고, 이를 통해 앞으로 생길 빈 칸을 추론하는 능력 또한 올라가게 됩니다. 
+
+6.1.2. class multi-head attention
+
+<img width="913" height="283" alt="image" src="https://github.com/user-attachments/assets/f4d6330d-bb8b-4ee5-9848-d596b61a5eae" />
+
+이제는 multihead attention을 구성하는 단계입니다. 이후 나올 class TinyGPT에서 emb_dim을 128로 설정하였고, num_heads를 4로 설정하였으므로, 이는 하나의 head가 32개의 차원을 담당하는 모양입니다. 
+
+이후 proj는 선형대수의 projection으로, 4개의 head가 계산한 값을 projection하여 수직적으로 데이터를 쌓아놓는 과정입니다. 그리고 여기에 dropout을 취하여 프로그램의 정확성을 더 높입니다. 
+
+6.1.3. class FeedForward
+
+<img width="905" height="219" alt="image" src="https://github.com/user-attachments/assets/b33b30c2-4805-41d2-a994-4f9b02366268" />
+
+nn.linear에서 4*embd_dim을 통해 128 * 512 사이즈의 부풀려진 데이터를 만들어냅니다. 그리고 ReLU를 통해 양수값만 남김으로써 multi-head attention으로 만들어낸 가중치가 실제 x의 값을 더 잘 모방하도록 만듭니다. 그리고 다시 순서를 바꾸어 nn.linear를 함으로써 원래의 사이즈로 돌아오고, dropout을 통해 모델의 추론능력을 향상시킵니다. 
+
+6.1.4. class block
+
+<img width="759" height="249" alt="image" src="https://github.com/user-attachments/assets/b8fbd035-d4a5-480c-90c9-5be719afcb1f" />
+
+self.ln1과 self.ln2는 데이터를 정규화시켜주는 역할입니다. 
+self.sa에서는 multi-head attention을 통해 글자와 글자 사이의 관계를 만들어내고, self.ffwd에서는 앞서 정의한 feedforward를 통해 추론시스템을 만들어냅니다. 
+
+def forward에서는 우리의 x가 self.ln을통해 정규화되고, 정규화된 데이터가 self.sa를 통과하며 주변 글자와 가지는 관계 정보를 가지게 됩니다. 그 값을 x와 더하므로 x는 기존 x에 주변 글자와 가지는 관계정보가 더해진 값이 됩니다. 그 x에 self.ffwd를 통과한 정규화된 x를 더하므로, x는 기존의 x값과 주변글자와의 관계정보에다가 그 x의 특징이 극대화된 자료라고 할 수 있습니다. 
+
+6.1.5. class TinyGPT
+
+<img width="829" height="416" alt="image" src="https://github.com/user-attachments/assets/94467032-02aa-4ed8-b76f-76132034bfd6" />
+
+이 클래스에서는 input, 즉 "input.txt"로부터 만들어낸 데이터에, 그 각각의 글자가 다른 글자와 가지는 관계정보와 위치정보를 더합니다. 그리고 num_layer는 self.blocks에서 활용되는데 이는 block의 개수가 됩니다. 예를 들어 blocks가 5라고 한다면 첫번째로 글자와 글자를 조합하는 block을 생성하고, 두번째로 조합된 글자와 조합된 글자를 조합하는 block을 생성하며, 세번째로 그렇게 만들어진 block 간의 문법이나 의미 관계를 만들어내고, 네번째로 그러한 의미관계들로 이루어진 block을 통해 문장을 나타내는 block을 만들어내며, 다섯번째로 그러한 문장의 분위기나 말투 등이 고려되어 나타나는 block을 만들어낸다고 이해할 수 있습니다. 
+
+<img width="754" height="327" alt="image" src="https://github.com/user-attachments/assets/34b45c78-f6fa-4668-9b2e-4480a5bf79c7" />
+
+결론적으로 살짝 어색하지만 훌륭한 결과물이 나타나는 것을 볼 수 있습니다.
+___
+
+7. Don Quixote
+
+<img width="874" height="121" alt="image" src="https://github.com/user-attachments/assets/e7a2bf39-c4f7-4ebe-a5c5-a64d01a3a016" />
+
+저는 스페인어를 서어서문학과 졸업생 수준으로 할 수 있습니다. 그래서 스페인어 원어로 되어있는 돈키호테 txt 파일을 사용했습니다. 나머지 프로그래밍 구조는 바꾸지 않고, 모든 dropout 비율을 0.2로 설정하여 프로그램의 추론력을 높이고자 했습니다. 
+
