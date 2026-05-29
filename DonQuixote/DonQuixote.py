@@ -151,7 +151,7 @@ for epoch in range(10):
     print(f"epoch {epoch:2d} | train loss {train_loss:.4f}")
 
 @torch.no_grad()
-def sample_gpt(model, block_size, stoi, itos, device, start_text="ROMEO:", max_new_tokens=400):
+def sample_gpt(model, block_size, stoi, itos, device, start_text="Desocupado:", max_new_tokens=400):
     model.eval()
     context = torch.zeros((1, block_size), dtype=torch.long, device=device)
     for ch in start_text:
@@ -168,4 +168,4 @@ def sample_gpt(model, block_size, stoi, itos, device, start_text="ROMEO:", max_n
         context = torch.cat([context[:, 1:], ix], dim=1)
     return "".join(out)
 
-print(sample_gpt(model, block_size, stoi, itos, device, start_text="ROMEO:", max_new_tokens=500))
+print(sample_gpt(model, block_size, stoi, itos, device, start_text="Desocupado:", max_new_tokens=500))
