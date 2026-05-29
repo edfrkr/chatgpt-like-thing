@@ -320,6 +320,17 @@ ___
 7. Don Quixote
 
 <img width="874" height="121" alt="image" src="https://github.com/user-attachments/assets/e7a2bf39-c4f7-4ebe-a5c5-a64d01a3a016" />
+<img width="110" height="25" alt="image" src="https://github.com/user-attachments/assets/8f2bd6aa-84e0-4f15-8b21-961e889f3a25" />
 
 저는 스페인어를 서어서문학과 졸업생 수준으로 할 수 있습니다. 그래서 스페인어 원어로 되어있는 돈키호테 txt 파일을 사용했습니다. 나머지 프로그래밍 구조는 바꾸지 않고, 모든 dropout 비율을 0.2로 설정하여 프로그램의 추론력을 높이고자 했습니다. 
 
+<img width="624" height="44" alt="image" src="https://github.com/user-attachments/assets/994cc609-e473-4c30-b5c6-0333f16f9db9" />
+
+start text는 Prologo(prologue)의 첫 단어인 Desocupado (바쁘지 않은)으로 설정했습니다. 
+원래 문장은 "Desocupado lector: sin juramento me podrás creer que quisiera que este libro, como hijo del entendimiento, fuera el más hermoso, el más gallardo y más discreto que pudiera imaginarse." : "한가한 독자들이여: 이 책이 지성의 자식으로서 상상할 수 있는 것보다 가장 멋지고, 가장 대단하고, 가장 신중한 책이기를 바랐다는 걸 맹세없이도 당신은 믿을 수 있을 것입니다."라는 뜻의 문장입니다.
+
+<img width="834" height="119" alt="image" src="https://github.com/user-attachments/assets/3fc87505-3353-4096-b2ae-8a2e07056e1e" />
+
+모델의 결과물은 "한가한, 그 (없는 단어) - 그 (없는 단어), 그 (없는 단어), 그리고 산초 안초 (없는 단어) 기사들 (없는 단어). ~~~ "의 모양입니다. 
+
+기본적으로 비문이고 없는 단어가 많이 나오지만, 스페인어의 특징인 que 접속문 (영어의 that 접속문)과, "Redemeniosele"와 같이 동사+재귀목적어+간접목적어의 형태, "pedio"처럼 단순 과거 문법, "sabia"처럼 불완료과거 문법, "el" 이나 "la"와 같은 남성 여성 구분 등, 스페인어의 전반적인 특징이 보인다는 점에서 TinyGPT를 통해 만든 block을 통해 스페인어의 전반적인 문법을 잘 포착했음을 볼 수 있습니다. 
