@@ -99,9 +99,9 @@ def sample_sequence_model(model, block_size, stoi, itos, device, start_text="ROM
     out = list(start_text)
     for _ in range(max_new_tokens):
         logits = model(context)
-        logits = logits[:, -1, :] #romeo 뒤에 올만한 것
-        probs = F.softmax(logits, dim=-1) #romeo 뒤에 올만한 것을 확률로 바꿈
-        ix = torch.multinomial(probs, num_samples=1) #확률이 가장 높은 애를 뽑는 것
+        logits = logits[:, -1, :] 
+        probs = F.softmax(logits, dim=-1) 
+        ix = torch.multinomial(probs, num_samples=1) 
         out.append(itos[ix.item()]) #romeo: 뒤에 붙여주는 것
         context = torch.cat([context[:, 1:], ix], dim=1)
     return "".join(out)
