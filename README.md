@@ -2,6 +2,7 @@
 
 1. Notebook 1 (Bigram Language Model)
 <img width="890" height="476" alt="image" src="https://github.com/user-attachments/assets/2d849e7b-1b78-4a61-b1fc-d424dc6020a8" />
+
 1) import torch / import torch.nn as nn / import torch.nn.functional as F
    from troch.utils.data import Dataset, DataLoader / from pathlib import Path / import urllib.request
 
