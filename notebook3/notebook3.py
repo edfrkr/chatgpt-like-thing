@@ -5,7 +5,7 @@ from torch.utils.data import Dataset, DataLoader
 from pathlib import Path
 import urllib.request
 
-if not Path("names.txt").exists():
+if not Path("input.txt").exists():
     urllib.request.urlretrieve(
         "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt",
         "input.txt"
