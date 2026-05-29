@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from pathlib import Path
+import urllib.request
 
 if not Path("input.txt").exists():
     urllib.request.urlretrieve(
