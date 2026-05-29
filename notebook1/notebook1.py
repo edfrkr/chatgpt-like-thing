@@ -58,8 +58,8 @@ class BigramLanguageModel(nn.Module):
         self.W = nn.Parameter(torch.randn(vocab_size, vocab_size))
 
     def forward(self, x):
-        x = x.view(-1)  # (B,)
-        logits = self.W[x]  # (B, V)
+        x = x.view(-1)  
+        logits = self.W[x]  
         return logits
 
 model = BigramLanguageModel(vocab_size)
