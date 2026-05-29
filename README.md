@@ -77,7 +77,8 @@
    xb, yb = next(iter(loader))이므로, iter(loader)를 통해 위에서 만든 loader로부터 하나씩 데이터를 꺼낸 후, next()를 통해 다음차례의 데이터를 또 꺼내는 것입니다. 그러므로 xb = [[0,-,-], [13,13,1], ~~~] (32개), yb = [13,5,1,~~~] (32개)라고 생각할 수 있습니다.
 
 1.3. Bigram modelling  *명시적 one-hot
-<img width="624" height="282" alt="image" src="https://github.com/user-attachments/assets/e7c249a6-4b1e-40be-b07d-f478d6b2fdc4" />
+
+<img width="555" height="293" alt="image" src="https://github.com/user-attachments/assets/74fbed03-a94b-44af-bfab-77e6c05a01a8" />
 
 1.3.1. class BigramLanguageModel(nn.Module)
 
@@ -90,7 +91,7 @@
 
    x=x.view(-1)입니다. x는 dataloader를 거쳐 나온 데이터이므로, 32*1의 모양입니다. -1을 기준으로 view를 한다는 의미이므로, x는 32개의 숫자의 나열이 됩니다.
 
-   F.one_hot(x,num_classes=self.vocab_size).float()에서는 one hot의 개념을 알아야 합니다. 예를 들어 "."은 0번째이고, "e"는 5번째입니다. 그러므로 "."을 행렬로 표시하면 [1,0,0,...]가 됩니다. "e"를 행렬로 표시하면 [0,0,0,0,1,0,0,...]가 됩니다. 그러므로 "."이나 "e"와 같은 데이터 하나가 들어왔을 때, x_onehot은 1*27의 행렬이 되고, self.w는 x_onehot에 곱하는 27*27사이즈의 가중치 행렬이 됩니다.
+   F.one_hot(x,num_classes=self.vocab_size).float()에서는 one hot의 개념을 알아야 합니다. 예를 들어 "."은 0번째이고, "e"는 5번째입니다. 그러므로 "."을 행렬로 표시하면 [1,0,0,...]가 됩니다. "e"를 행렬로 표시하면 [0,0,0,0,1,0,0,...]가 됩니다. 그러므로 "."이나 "e"와 같은 데이터 하나가 들어왔을 때, x_onehot은 1 * 27의 행렬이 되고, self.w는 x_onehot에 곱하는 27 * 27사이즈의 가중치 행렬이 됩니다.
 
    그러므로 두 행렬곱의 결과인 logits는 1*27의 행렬이 됩니다. 즉, x_onehot에 해당하는 글자 중 "e"라는 글자가 [., a, ..., z]의 27개 문자와 가지는 연관성을 표현하는 행렬이 됩니다. 
 
@@ -102,7 +103,7 @@
 
    model = BigramLanguageModel(vocab_size)를 통해 우리가 사용할 모델의 위에서 정의한 logits = x_onehot @ W 자료임을 정의하며, vocab_size가 인수이므로, W는 27*27임을 알 수 있습니다. 
 
-   logits = model(xb)이므로, 위에서 정의한 xb를 모델에 넣어서 나온 값을 logits에 집어넣습니다. xb는 32*1의 모양이므로, xb의 각각의 데이터에 대한 model에서의 결과값이 나올 것입니다. 그러므로 logits는 32*27사이즈의 행렬임을 알 수 있으며, 무작위의 문자 32개에 대해 우리가 가진 vocab의 27개의 문자가 가지는 연관성에 대한 값이 나올 것입니다. 
+   logits = model(xb)이므로, 위에서 정의한 xb를 모델에 넣어서 나온 값을 logits에 집어넣습니다. xb는 32 * 1의 모양이므로, xb의 각각의 데이터에 대한 model에서의 결과값이 나올 것입니다. 그러므로 logits는 32*27사이즈의 행렬임을 알 수 있으며, 무작위의 문자 32개에 대해 우리가 가진 vocab의 27개의 문자가 가지는 연관성에 대한 값이 나올 것입니다. 
 
 <img width="471" height="17" alt="image" src="https://github.com/user-attachments/assets/a6ca1c8d-90f6-4b22-b83c-9ed3b97ce900" />
 <img width="247" height="16" alt="image" src="https://github.com/user-attachments/assets/0f35e4dd-54dd-4af2-b395-f9349274f6eb" />
@@ -145,11 +146,132 @@ ___
 
 2. notebook 2
 
+*dataset까지는 notebook1과 내용이 같으므로 모델부터 설명을 시작합니다.
 
+2.1. MLP model
 
+<img width="647" height="345" alt="image" src="https://github.com/user-attachments/assets/1d81307a-3901-4b07-9d8d-8f2eaf35216e" />
 
+   이번에는 직접 self.W을 만들고 x_onehot과 행렬곱하는 방식이 아니라, nn.sequential 함수를 사용합니다. 
    
+   먼저 nn.embedding(vocab_size, emb_dim)은 onehot @ self.W를 그대로 진행하는 것과 같습니다. 곧 embedding을 통과한 데이터는 batch_size * block_size * emb_dim 모양의 행렬이며, 각 행은 각각의 데이터가 vocab_size안의 문자들과 가지는 정보를 의미합니다. emb_dim이 10이라는 이야기는, batch_size(64)*block_size(3) 모양의 행렬의 각각의 데이터(글자들)마다 10차원의 정보를 가진다는 의미입니다. 이 점에서 one_hot은 0과 1의 데이터이지만, nn.embedding은 10차원의 연속적 정보라는 점에서 다릅니다. 
+   
+   이후 nn.flatten을 통해 10차원의 데이터를 가지고 있는 하나의 블록을 이어붙여서, 결론적으로 64 * 30 모양의 데이터로 가공합니다. (batch_size를 64로 지정했기 때문입니다.) 
 
+   nn.linear(block_size * emb_dim, hidden_dim)에서 hidden이란, 문자열에 숨겨져 있는 규칙을 찾는 것입니다. 즉, emm이라는 block에 대해 a가 오는 규칙의 가능성, b가 오는 규칙의 가능성 등등이 있으며, hidden_dim = 200이므로, 200개의 규칙(혹은 특징)을 추출하는 것입니다. 이렇게 하여 "30 * 200" 사이즈의 가중치행렬을 만들고, 이를 통해 "64 * 200" 사이즈의 
+
+   nn.tanh()에서는 지금까지의 처리된 데이터 (64 * 200 모양)에 하이퍼볼릭 탄젠트 값을 씌워 곡선형으로 변환합니다. 
+
+   마지막으로 다시 nn.linear(hidden_dim, vocab_size)를 함으로써 hidden_layer 데이터 (64 * 200)에 200 * 27사이즈의 가중치 데이터를 곱해서 64 * 27사이즈의 최종 logits 데이터가 완성됩니다. 
+
+   즉, nn.sequential()에서 하는 작업은 embedding하고 flatten하여 만든 한 단어의 행렬을, 같은 과정을 통해 나온 다른 단어의 행렬과 linear작업을 하여 단어와 단어 사이의 거리(벡터와 벡터 사이의 거리 또는 각도)가 작은 단어들을 찾아내어 확률을 부여하는 작업입니다. 
+   
+*training & optimizing과 sampling은 notebook1과 내용이 같으므로, 바로 결과를 설명합니다.
+
+<img width="748" height="18" alt="image" src="https://github.com/user-attachments/assets/ffec0e01-8f4b-48c9-8c85-8bf8bc671da0" />
+
+notebook1보다는 조금 더 그럴싸한 output이 나왔음을 볼 수 있다. 
+___
+
+notebook3
+
+<img width="780" height="102" alt="image" src="https://github.com/user-attachments/assets/fb540905-0f4d-4e85-aa09-250889225b9b" />
+
+이번에는 names가 아닌 셰익스피어의 로미오와 줄리엣 작품을 데이터로 사용하며, 전반적인 구조는 notebook2와 같으므로, 필요한 부분만 설명하겠습니다.
+
+3.1 sliding window dataset
+
+3.1.1. class CharSequenceNextCharDataset(Dataset):
+<img width="504" height="316" alt="image" src="https://github.com/user-attachments/assets/9e26f86d-3937-4a4b-9ef8-e39551ce5fcf" />
+
+   이 class의 def__init__은 self.dat = data, self.block_size = block_size이므로, 이 클래스를 사용한 dataset의 인수로 넣은 data(text의 모든 글자를 정수화 한 자료)와 block_size(16)을 사용하겠다는 의미입니다. 
+
+   또한 def_len__(self)에서 len(self.data) - self.block_size를 하는 이유는, self.data전체를 x값으로 넣어버리면 남아있는 데이터가 없으므로 정답이 될 문자를 남겨놓을 수 없기 때문입니다.
+
+   def__getitem__에서는 x는 인덱스 위치의 값부터 블록사이즈만큼까지의 데이터를 가지고, y는 인덱스위치에서 블록사이즈 + 1만큼의 위치에 있는 데이터 1개를 의미합니다. 
+
+<img width="602" height="370" alt="image" src="https://github.com/user-attachments/assets/0b5f8020-c6bc-4c9c-9ce3-8e2fa48ecd20" />
+
+   그러므로 xb는 128 * 16, embedding을 통과한 후에는 128 * 16 * 64, fatten을 통과한 후에는 128 * 80, 그다음 linear를 통과하면 128 * 256, tanh를 통과한 후 마지막 linear를 통과하면 128 * 65의 logits가 나올 것입니다. 
+
+*training과 evaluation은 내용이 같으므로 바로 sampling과 결과를 설명합니다.
+
+3.2. sampling 및 결과
+
+<img width="781" height="360" alt="image" src="https://github.com/user-attachments/assets/bd5025c0-0f09-4f24-ad9d-37c2879ea104" />
+
+sampling과정도 notebook2와 크게 다르지는 않습니다. 다만, max_new_tokens의 의미는 start_text로부터 몇 개의 데이터를 추론해낼 것인지에 대한 정보입니다. def에서는 300으로 정의하였으므로 300개의 데이터를 통해 추론해 낼 것이고, print문에서는 400이므로 ROMEO: 뒤에 400개의 데이터를 최종적으로 출력할 것임을 알 수 있습니다. 
+
+<img width="511" height="320" alt="image" src="https://github.com/user-attachments/assets/78cfb113-ae5e-471c-a732-accf74d9ae3e" />
+
+완벽하지는 않지만, 꽤나 영어문장과 같은 모습이 되었음을 볼 수 있습니다. 
+___
+
+4. notebook4
+
+*attention이란?
+
+<img width="374" height="452" alt="image" src="https://github.com/user-attachments/assets/f02695b8-1a0d-4e9d-b807-2d3f948aa23c" />
+
+   I am a student.라는 문장을 input한다고 생각을 해보겠습니다. 이때의 input 데이터는 ["I", " ", "a", "m", ..., "."] 입니다. input embedding은 앞선 notebook에서 model을 통해 batchsize*blocksize*emb_dim의 행렬 데이터를 만든것 과 같이 "I", " ", "a", ..., "." 각각에 대해 동시 고차원의 행렬데이터를 만들어주는 것입니다.
+
+   notebook3나 notebook4에서는 1번째~10번째글자와 같이 sliding window dataset이었지만, attention 모델에서는 각각의 글자가 개별로 input됩니다. 그러므로, input되는 글자가 문장에서 몇 번째 index에 있었던 글자인지에 대한 정보를 주어야합니다. 이를 수행하는 것이 positional encoding입니다.
+
+   최종값은 input embedding + position encoding 형태이며, 우리 문장의 "I"를 예시로 들자면 "I"의 의미를 나타내는 행렬 + "첫번째 위치"를 나타내는 행렬로 표시가 될 것입니다. 이 값이 multi-head attention을 통해 input된 데이터의 정보를 담은 행렬이 되고, feed forward에서는 이 행렬의 정보를 추론합니다.
+
+   OUTPUT에는 우리가 한글로 된 데이터를 원해서 "나는 학생입니다."라는 글자를 넣어 output embedding + positional embedding 한다고 하면, 이 대 진행하는 masked multi-head attention은 어떠한 크기의 행렬이 될 것입니다. 그 행렬의 첫 번째 행은 첫 번째 글자인 "나"에 대한 정보이므로 그 뒤의 값은 필요가 없습니다.(이전에 어떤 글자가 나왔는지를 보아야 하므로, 이후에 어떤 글자가 있는지는 필요한 정보가 아니기 때문입니다.) 그러므로 두번째 행은 "는"에 대한 정보이고, "나는" 까지의 정보를 가지고 있습니다. 
+
+   똑같이 이 output은 input에서 나온 값과 같이 multi-head attention을 통하여 두 데이터의 정보를 담은 행렬이 되고, 최종적으로 이 행렬을 linear layer를 통과시켜, softmax를 통해 확률을 도출해 낼 수 있습니다. 즉, input의 글자간의 유사성을 담은 행렬과 output의 글자간의 유사성을 담은 행렬 간의 유사성을 수치화하여, linear를 돌렸을 때 가장 loss가 적은 gradient를 만들어내는 '글자의 정보를 담은 행렬의 각 데이터의 확률'을 만들어내는 것입니다.  
+
+<img width="542" height="60" alt="image" src="https://github.com/user-attachments/assets/9190b04a-e1da-4007-97a5-fc8d1d24232d" />
+
+   attention이 무엇인지 'i am a student'를 기준으로 설명하겠습니다. 우선 쿼리는 input으로 생각할 수 있습니다. 즉 [i, , a, m, a, s, t, u, d, e, n, t]와 같은 데이터라고 생각한다면, key는 query주변의 글자에 대한 데이터라고 생각할  수 있습니다. 즉, "a"라는 query에 대해 " ", "m", "s"와 같은 key가 존재할 수 있습니다. 그리고 각각의 글자는 positonal encoding이 된 상태이므로 위치정보를 가진 글자들입니다. 그러므로 a의 앞에 " "이 오는지, a의 뒤에 " "이 오는지에 따라 query * key의 값은 달라질 것입니다.
+
+   그러므로 Query = [i, , a, m, a, s, t, u, d, e, n, t], 와 Key = [i, , a, m, a, s, t, u, d, e, n, t]를 Key를 transpose하여 행렬곱하면 12 * 12 * A 모양의 글자간의 관계정보가 담긴 행렬이 만들어 질 것입니다. 이를 dimension을 square root한 값으로 나눠주면, 데이터 크기를 기준으로 자료가 표준화되며, 이를 softmax를 통해 각각의 글자에 대한 확률값으로 바꿀 수 있습니다. 이 값(위에서는 편의상 알파벳으로 썻지만, 글자의 의미와 위치값을 가진 숫자로 이루어진 행렬로부터 나온 숫자값)에 진짜 문장인 'i am a student'의 각 글자가 가지고 있는 의미 및 위치정보를 곱하면, 확률적으로 가장 나올법한 알파벳과 그 위치값이 출력됩니다. 
+
+<img width="488" height="274" alt="image" src="https://github.com/user-attachments/assets/49d99c87-d1fc-47b3-833e-d3eef0bb1abf" />
+
+   이 Q@K_transposed 계산을 한 번 하는 것이 single head attention, 이 계산을 고차원으로 진행하는 것이 multi-head attention이라고 이해할 수 있습니다. 
+
+4.1. dataset
+
+<img width="481" height="231" alt="image" src="https://github.com/user-attachments/assets/9b0218f5-432b-42a1-bd36-657abb5afe8c" />
+
+   아까와는 dataset을 정하는 방법이 달라졌습니다. 아까는 x를 1번째부터 10번째까지, y를 11번째 글자로 지정했던 것과는 달리, y는 idx+1 부터 idx+block_size+1로 정의함으로써 2번째부터 11번째 글짜까지로 지정하는 방식이 되었습니다.
+
+4.2. model
+
+<img width="548" height="318" alt="image" src="https://github.com/user-attachments/assets/afe6b80b-76e8-4be1-bf90-54fb43ee4cef" />
+
+   이 클래스에서 attention 모델의 느낌을 볼 수 있습니다. def__init__에서 self.token_embedding과 self.position_embedding을 통해 input embedding과 position embedding을 하고 있음을 알 수 있으며, nn.embedding을 통과한 데이터는 앞선 노트북에서 self.W를 one_hot과 행렬곱한 것과 절차상으로 같은 것입니다. lm_head는 이 과정을 끝낸 후 통과시키는 linear layering임을 볼 수 있습니다.
+
+   또한, def__forward에서 tok+pos를 함으로써 글자의 의미정보와 위치정보를 더하고 있음을 볼 수 있으며, logits에 lm_head로 부터 나온 값을 대입하므로 logits는  linear layering을 거쳐 나온 logits값임을 알 수 있습니다. 
+
+<img width="784" height="271" alt="image" src="https://github.com/user-attachments/assets/316d33e9-e44c-4d72-8023-b2602ff23010" />
+
+   결론적으로, 희곡의 모양새는 하고 있지만 notebook 3보다는 완성도가 낮음을 볼 수 있습니다. 
+___
+
+5. notebook 5
+
+   이제는 masked single-head attention을 진행합니다.
+
+5.1. class SingleHeadASelfAttention
+<img width="675" height="387" alt="image" src="https://github.com/user-attachments/assets/8dbce597-5404-46d7-b75b-2904c9874f5a" />
+
+   self.key, self.query, self.value를 통해 모델에 기입되는 문장정보로부터 key, query, value 데이터를 만들어내고 있습니다. 그리고 def forward를 통해 query @ key_transpose를 계산한 후 softmax를 취하여 확률값인 wei를 계산해내고, 마지막에 wei @ v를 함으로써 가장 확률적으로 나올법한 글자값인 out을 반환해내는 것을 볼 수 있습니다. 
+
+5.2. class TinyattentionLM
+<img width="566" height="399" alt="image" src="https://github.com/user-attachments/assets/8a2aa304-7824-4984-a16b-69a0b8abb808" />
+
+   이 class에서는 def__init__에서 input embedding과 position_embedding을 하고, def forward에서 input embedding과 position embedding 값을 더한 값을 정의하고 있습니다. 또한 def_innit에서 5-1에서 정의한 클래스를 사용하고 있으므로, 위의 클래스는 attention의 구조를 만들고, 밑의 클래스는 attention에 들어갈 데이터를 처리하고 attention을 통과시키는 작업이라고 생각할 수 있습니다. 
+
+<img width="847" height="311" alt="image" src="https://github.com/user-attachments/assets/78e32391-2d6a-4057-b968-561bde93cf97" />
+
+   결론적으로 notebook4보다 개선된 모습을 보여주지만 아직 부족함을 볼 수 있습니다.
+___
+
+6. notebook6
 
 
 
